@@ -12,10 +12,11 @@ public class Joystick : MonoBehaviour
     [SerializeField] private float cameraSize;
 
     [Header("Other")]
-    private Transform joystickTransform, stickTransform;
+    private Transform stickTransform;
+    private Transform joystickTransform;
 
-    private Vector2 screenResolution;
     private float screenRatio;
+    private Vector2 screenResolution;
 
     private bool stickWasTouched = false;
 
@@ -27,35 +28,36 @@ public class Joystick : MonoBehaviour
         screenRatio = (float)Screen.currentResolution.width / (float)Screen.currentResolution.height;
         screenResolution = new Vector2(Screen.currentResolution.width, Screen.currentResolution.height);
     }
-    
+
     private void Update()
     {
-        Vector2 localTouchPosition, joystickPosition;
+        Vector2 joystickPosition, localTouchPosition;
+
+        joystickPosition = new Vector2(joystickTransform.localPosition.x, joystickTransform.localPosition.y);
 
         localTouchPosition = Input.mousePosition / screenResolution * cameraSize * 2 - new Vector2(cameraSize, cameraSize);
-        localTouchPosition *= new Vector2(screenRatio, 1);
-        joystickPosition = new Vector2(joystickTransform.position.x, joystickTransform.position.y);
+        localTouchPosition = (localTouchPosition * new Vector2(screenRatio, 1) - joystickPosition) / 2;
 
-        bool isTouchOutOfBounds = (localTouchPosition - joystickPosition).magnitude > stickSize;
+        bool isTouchOutOfBounds = localTouchPosition.magnitude > stickSize;
 
         localStickPosition = Vector2.zero;
 
         if (!Input.GetMouseButton(0) || (!stickWasTouched && isTouchOutOfBounds)) 
         {
-            stickTransform.position = joystickPosition;
+            stickTransform.localPosition = Vector2.zero;
             stickWasTouched = false;
             return;
         }
 
-        localStickPosition = (localTouchPosition - joystickPosition) / stickSize;
+        localStickPosition = localTouchPosition / stickSize;
 
         if (stickWasTouched && isTouchOutOfBounds)
         {
             localStickPosition = localStickPosition.normalized;
-            localTouchPosition = joystickPosition + localStickPosition * stickSize;
+            localTouchPosition = localStickPosition * stickSize;
         }
 
-        stickTransform.position = localTouchPosition;
+        stickTransform.localPosition = localTouchPosition;
         stickWasTouched = true;
     }
 }
